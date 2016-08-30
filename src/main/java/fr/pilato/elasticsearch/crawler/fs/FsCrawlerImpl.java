@@ -359,33 +359,35 @@ public class FsCrawlerImpl {
                 for (FileAbstractModel child : children) {
                     String filename = child.name;
 
-                    // https://github.com/dadoonet/fscrawler/issues/1 : Filter documents
-                    boolean isIndexable = FsCrawlerUtil.isIndexable(filename, fsSettings.getFs().getIncludes(), fsSettings.getFs().getExcludes());
-                    logger.debug("[{}] can be indexed: [{}]", filename, isIndexable);
-                    if (isIndexable) {
-                        if (child.file) {
-                            logger.debug("  - file: {}", filename);
-                            fsFiles.add(filename);
-                            if (lastScanDate == null
-                                    || child.lastModifiedDate.isAfter(lastScanDate)
-                                    || (child.creationDate != null && child.creationDate.isAfter(lastScanDate))) {
-                                indexFile(child, stats, filepath, path.getInputStream(child), child.size);
-                                stats.addFile();
-                            } else {
-                                logger.debug("    - not modified: creation date {} , file date {}, last scan date {}",
-                                        child.creationDate, child.lastModifiedDate, lastScanDate);
-                            }
-                        } else if (child.directory) {
-                            logger.debug("  - folder: {}", filename);
-                            fsFolders.add(filename);
-                            indexDirectory(stats, filename, child.fullpath.concat(File.separator));
-                            addFilesRecursively(path, child.fullpath.concat(File.separator), lastScanDate);
-                        } else {
-                            logger.debug("  - other: {}", filename);
-                            logger.debug("Not a file nor a dir. Skipping {}", child.fullpath);
-                        }
+                    if (child.directory) {
+                        logger.debug("  - folder: {}", filename);
+                        fsFolders.add(filename);
+                        indexDirectory(stats, filename, child.fullpath.concat(File.separator));
+                        addFilesRecursively(path, child.fullpath.concat(File.separator), lastScanDate);
                     } else {
-                        logger.debug("  - ignored file/dir: {}", filename);
+                        // https://github.com/dadoonet/fscrawler/issues/1 : Filter documents
+                        boolean isIndexable = FsCrawlerUtil.isIndexable(filename, fsSettings.getFs().getIncludes(), fsSettings.getFs().getExcludes());
+                        logger.debug("[{}] can be indexed: [{}]", filename, isIndexable);
+                        if (isIndexable) {
+                            if (child.file) {
+                                logger.debug("  - file: {}", filename);
+                                fsFiles.add(filename);
+                                if (lastScanDate == null
+                                        || child.lastModifiedDate.isAfter(lastScanDate)
+                                        || (child.creationDate != null && child.creationDate.isAfter(lastScanDate))) {
+                                    indexFile(child, stats, filepath, path.getInputStream(child), child.size);
+                                    stats.addFile();
+                                } else {
+                                    logger.debug("    - not modified: creation date {} , file date {}, last scan date {}",
+                                                 child.creationDate, child.lastModifiedDate, lastScanDate);
+                                }
+                            } else {
+                                logger.debug("  - other: {}", filename);
+                                logger.debug("Not a file nor a dir. Skipping {}", child.fullpath);
+                            }
+                        } else {
+                            logger.debug("  - ignored file/dir: {}", filename);
+                        }
                     }
                 }
             }
